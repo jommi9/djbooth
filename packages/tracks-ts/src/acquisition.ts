@@ -4,7 +4,7 @@ import { chmod, mkdir, open, readFile, rename, rm, stat, writeFile } from "node:
 import { dirname, extname, resolve } from "node:path";
 
 import { TracksError } from "./errors.js";
-import { parseManifest, type SetManifest } from "./manifest.js";
+import { parseManifest, type AcquisitionBackend, type SetManifest } from "./manifest.js";
 import { runProcess } from "./process.js";
 
 export type AudioMetadata = {
@@ -23,7 +23,7 @@ export type AudioMetadata = {
 };
 
 export type AudioAcquisitionSource = {
-  backend: "slsk" | "ytdlp";
+  backend: AcquisitionBackend;
   source: string;
 };
 
@@ -50,6 +50,8 @@ export type YoutubeTarget = {
   title: string;
   artists: string[];
   durationSeconds?: number;
+  /** Exact recording code; catalog-backed acquirers use it before any fuzzy search. */
+  isrc?: string;
   /** Search hint only; matching still uses the original recording identity. */
   searchQuery?: string;
 };
@@ -478,6 +480,7 @@ export function audioMetadataWithAcquisitionSource(
 
 function acquisitionSourceLabel(acquisitionSource: AudioAcquisitionSource): string {
   if (acquisitionSource.backend === "slsk") return "Soulseek";
+  if (acquisitionSource.backend === "deezload") return "Deezer";
   try {
     const hostname = new URL(acquisitionSource.source).hostname.toLocaleLowerCase("en-US");
     if (

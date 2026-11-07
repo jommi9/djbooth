@@ -1,4 +1,4 @@
-export type TrackSourceProvider = "spotify" | "soundcloud" | "youtube" | "soulseek";
+export type TrackSourceProvider = "spotify" | "soundcloud" | "youtube" | "deezer" | "soulseek";
 
 export type TrackSource = {
   provider: TrackSourceProvider;
@@ -93,6 +93,9 @@ function providerForHostname(
     hostname === "youtu.be"
   ) {
     return "youtube";
+  }
+  if (hostMatches(hostname, "deezer.com") || hostMatches(hostname, "deezer.page.link")) {
+    return "deezer";
   }
   return undefined;
 }

@@ -37,7 +37,12 @@ import {
 } from "./generic-acquisition-plan.js";
 import { identify } from "./identify.js";
 import { defaultTrackLibraryRoot } from "./library-paths.js";
-import { createManifest, type RekordboxAnalysisArtifact, type SetManifest } from "./manifest.js";
+import {
+  createManifest,
+  type AcquisitionBackend,
+  type RekordboxAnalysisArtifact,
+  type SetManifest,
+} from "./manifest.js";
 import { isSupportedDownloadUrl } from "./media.js";
 import {
   importManifestToRekordbox,
@@ -1144,7 +1149,7 @@ function combineAcquisitionPasses(
   const downloaded = new Set(passes.flatMap((pass) => pass.downloaded));
   const resumed = new Set(passes.flatMap((pass) => pass.resumed));
   for (const path of downloaded) resumed.delete(path);
-  const unavailableBackends = new Map<string, { backend: "slsk" | "ytdlp"; reason: string }>();
+  const unavailableBackends = new Map<string, { backend: AcquisitionBackend; reason: string }>();
   for (const item of passes.flatMap((pass) => pass.unavailableBackends)) {
     unavailableBackends.set(`${item.backend}\u0000${item.reason}`, item);
   }

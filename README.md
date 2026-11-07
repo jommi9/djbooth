@@ -107,6 +107,11 @@ djbooth --version
 Copy [`.env.example`](.env.example) to the ignored root `.env` for provider credentials. Audio,
 sessions, cookies, databases, and model caches remain local and outside Git.
 
+Lossless Deezer acquisition is optional. Install [deezload](https://github.com/Lunatic16/deezload)
+with its Python requirements, put `deezload` on `PATH` or point `DEEZLOAD_PATH` at `deezload.py`,
+and set `DEEZLOAD_ARL` from a Deezer HiFi account. `download` and `import` then try Deezer before
+Soulseek and web sources.
+
 ## Getting Started
 
 Use the top-level CLI directly. Incur provides command help, machine-readable schemas, an LLM

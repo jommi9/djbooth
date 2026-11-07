@@ -25,7 +25,7 @@ import type {
   SetManifest,
   SpotifyCandidate,
 } from "./manifest.js";
-import { parseManifest } from "./manifest.js";
+import { ACQUISITION_BACKENDS, parseManifest } from "./manifest.js";
 import { JsonDiskCache, type CacheStats } from "./cache.js";
 
 export type SpotifyLibraryClient = {
@@ -1039,11 +1039,11 @@ export async function acquireManifest(
                 }
                 if (retagCodec === "aac") {
                   warnings.push(
-                    `${variantLabel(variant)} Soulseek source required a lossy AAC compatibility transcode`,
+                    `${variantLabel(variant)} ${backendLabel(acquired.acquirer.backend)} source required a lossy AAC compatibility transcode`,
                   );
                 } else if (retagCodec === "flac") {
                   warnings.push(
-                    `${variantLabel(variant)} Soulseek PCM source was losslessly converted to FLAC`,
+                    `${variantLabel(variant)} ${backendLabel(acquired.acquirer.backend)} PCM source was losslessly converted to FLAC`,
                   );
                 }
                 downloaded.push(variant.outputPath);
@@ -1348,7 +1348,7 @@ async function acquireVariant(
   const failures: string[] = [];
   let capabilityFallback: AcquirerFallback | undefined;
   const retryCandidates = new Map<AcquisitionBackend, ScoredYoutubeCandidate[]>();
-  for (const backend of ["slsk", "ytdlp"] as const) {
+  for (const backend of ACQUISITION_BACKENDS) {
     // Re-evaluate saved identities against this recording; never trust an old
     // score if enrichment or the chosen variant has changed since the attempt.
     retryCandidates.set(
@@ -1690,7 +1690,7 @@ function outputPathForSource(
   sourcePath: string,
   backend: AcquisitionBackend,
 ): string {
-  if (backend !== "slsk") return requestedPath;
+  if (!SOURCE_FORMAT_BACKENDS.has(backend)) return requestedPath;
   const sourceExtension = extname(sourcePath).toLocaleLowerCase("en-US");
   if (!sourceExtension) return requestedPath;
   const requestedExtension = extname(requestedPath);
@@ -1700,6 +1700,10 @@ function outputPathForSource(
   if (LOSSLESS_PCM_EXTENSIONS.has(sourceExtension)) return `${stem}.flac`;
   if (!PRESERVED_REKORDBOX_AUDIO_EXTENSIONS.has(sourceExtension)) return requestedPath;
   return `${stem}${sourceExtension}`;
+}
+
+function backendLabel(backend: AcquisitionBackend): string {
+  return backend === "slsk" ? "Soulseek" : backend === "deezload" ? "Deezer" : "yt-dlp";
 }
 
 function m4aOutputPath(path: string): string {
@@ -1721,9 +1725,12 @@ function targetForVariant(variant: AcquisitionRecordingVariant): YoutubeTarget {
     title: variant.title,
     artists: variant.artists,
     ...(variant.durationMs === undefined ? {} : { durationSeconds: variant.durationMs / 1000 }),
+    ...(variant.isrc ? { isrc: variant.isrc } : {}),
   };
 }
 
+/** Backends whose FLAC/MP3 deliveries are kept as-is instead of being normalized to M4A. */
+const SOURCE_FORMAT_BACKENDS: ReadonlySet<AcquisitionBackend> = new Set(["slsk", "deezload"]);
 const PRESERVED_REKORDBOX_AUDIO_EXTENSIONS = new Set([".flac", ".m4a", ".mp3"]);
 const LOSSLESS_PCM_EXTENSIONS = new Set([".aif", ".aiff", ".wav", ".wave"]);
 
@@ -1732,7 +1739,7 @@ function retagCodecForSource(
   outputPath: string,
   backend: AcquisitionBackend,
 ): "copy" | "aac" | "flac" {
-  if (backend !== "slsk") return "copy";
+  if (!SOURCE_FORMAT_BACKENDS.has(backend)) return "copy";
   const sourceExtension = extname(sourcePath).toLocaleLowerCase("en-US");
   const outputExtension = extname(outputPath).toLocaleLowerCase("en-US");
   if (sourceExtension === outputExtension) return "copy";
@@ -2224,7 +2231,9 @@ function validatePlan(
         const checkpointed = downloadForPath(entry, variant.outputPath);
         const allowedAdaptedOutput =
           allowCheckpointedSoulseekOutputs &&
-          (((checkpointed?.backend === "slsk" || checkpointed?.backend === "local") &&
+          (((checkpointed?.backend === "slsk" ||
+            checkpointed?.backend === "deezload" ||
+            checkpointed?.backend === "local") &&
             (outputExtension === ".flac" || outputExtension === ".mp3")) ||
             (checkpointed?.backend === "ytdlp" && outputExtension === ".flac"));
         const allowedLocalOutput =

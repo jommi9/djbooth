@@ -27,7 +27,9 @@ Resolution order:
 timestamped publisher description → agent browser/VM resolution through 1001Tracklists
 ```
 
-Acquisition reuses verified local files first, then configured Soulseek and web downloaders.
+Acquisition reuses verified local files first, then configured Deezer (`deezload` with
+`DEEZLOAD_ARL`), Soulseek, and web downloaders in that order. Deezer and Soulseek deliveries keep
+their FLAC or MP3 container; web downloads stage as M4A.
 Analysis begins per verified track in the end-to-end route. Unavailable releases remain explicit
 skipped rows; available tracks continue into the playlist.
 

@@ -21,6 +21,7 @@ import type {
   IndividualDownload,
   TrackAcquirer,
 } from "../acquire-manifest.js";
+import type { AcquisitionBackend } from "../manifest.js";
 import type {
   ScoredYoutubeCandidate,
   YoutubeSearchCandidate,
@@ -589,7 +590,10 @@ async function existingOutput(directory: string, basename: string): Promise<stri
   return file ? join(directory, file) : undefined;
 }
 
-export function unavailableTrackAcquirer(backend: "slsk" | "ytdlp", reason: string): TrackAcquirer {
+export function unavailableTrackAcquirer(
+  backend: AcquisitionBackend,
+  reason: string,
+): TrackAcquirer {
   return {
     backend,
     availability: () => Promise.resolve({ available: false, reason }),

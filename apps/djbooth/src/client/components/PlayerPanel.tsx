@@ -1248,6 +1248,7 @@ function sourceLabel(source: TrackSource): string {
     spotify: "Spotify",
     soundcloud: "SoundCloud",
     youtube: "YouTube",
+    deezer: "Deezer",
     soulseek: "Soulseek",
   }[source.provider];
   if (!source.url) return `Downloaded from ${provider}${source.peer ? ` · ${source.peer}` : ""}`;
@@ -1288,6 +1289,16 @@ function TrackSourceIcon({ provider }: { provider: TrackSourceProvider }) {
           strokeLinecap="round"
         />
         <path d="M11.8 17.7h7.5a3.1 3.1 0 0 0 .2-6.2 5 5 0 0 0-7.7-3.2Z" fill="currentColor" />
+      </svg>
+    );
+  }
+  if (provider === "deezer") {
+    return (
+      <svg className="player-source-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M2 16.2h4.4v2.6H2Zm0-3.6h4.4v2.6H2Zm5.8 3.6h4.4v2.6H7.8Zm0-3.6h4.4v2.6H7.8Zm0-3.6h4.4v2.6H7.8Zm5.8 7.2H18v2.6h-4.4Zm0-3.6H18v2.6h-4.4Zm0-3.6H18v2.6h-4.4Zm0-3.6H18v2.6h-4.4Zm5.8 10.8H24v2.6h-4.6Zm0-3.6H24v2.6h-4.6Zm0-3.6H24v2.6h-4.6Zm0-3.6H24v2.6h-4.6Zm0-3.6H24v2.6h-4.6Z"
+          fill="currentColor"
+        />
       </svg>
     );
   }

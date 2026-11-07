@@ -124,7 +124,9 @@ export type SpotifyState =
   | { status: "skipped"; reason: string }
   | { status: "failed"; query?: string; error: PipelineError };
 
-export type AcquisitionBackend = "slsk" | "ytdlp";
+/** Remote acquisition backends in default preference order. */
+export const ACQUISITION_BACKENDS = ["deezload", "slsk", "ytdlp"] as const;
+export type AcquisitionBackend = (typeof ACQUISITION_BACKENDS)[number];
 export type AcquisitionDownloadBackend = "local" | AcquisitionBackend;
 export type AcquisitionKind = "individual" | "source-set-clip";
 
@@ -955,7 +957,7 @@ function validateCandidate(value: unknown, path: string): ValidatedCandidate {
     "durationSeconds",
     "score",
   ]);
-  const backend = oneOf(record.backend, ["slsk", "ytdlp"], `${path}.backend`);
+  const backend = oneOf(record.backend, ACQUISITION_BACKENDS, `${path}.backend`);
   const id = nonemptyString(record.id, `${path}.id`);
   const source = nonemptyString(record.source, `${path}.source`);
   nonemptyString(record.title, `${path}.title`);
@@ -1003,7 +1005,7 @@ function validateDownload(value: unknown, path: string): ValidatedDownload {
     "variantKey",
     "clip",
   ]);
-  const backend = oneOf(record.backend, ["local", "slsk", "ytdlp"], `${path}.backend`);
+  const backend = oneOf(record.backend, ["local", ...ACQUISITION_BACKENDS], `${path}.backend`);
   const kind =
     record.kind === undefined
       ? "individual"

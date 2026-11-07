@@ -8,7 +8,7 @@ Repository prefix: `pnpm djbooth`; release prefix: `djbooth`. Discovery: `<path>
 | Import   | Hosted playlist/set → complete resumable library workflow                                          | `import <source>`                                  |
 | Resolve  | Set URL/file → ordered database pipeline rows; description → 1001Tracklists → recognition fallback | `resolve <source>`                                 |
 | Enrich   | Content rows → recording IDs, release metadata, provider provenance, acquisition candidates        | `enrich [--folder <folder>]`                       |
-| Download | Ready source rows → adopted/downloaded canonical tagged audio; Soulseek/typed downloader fallback  | `download <source>`                                |
+| Download | Ready source rows → adopted/downloaded canonical tagged audio; deezload → Soulseek → typed downloader | `download <source>`                                |
 | Analyze  | Downloaded source rows → BPM, key, beatgrid, waveforms, seek tables, phrases, DAT/EXT/2EX          | `analyze <source>`                                 |
 | Stems    | Library track → managed MLX vocals, drums, bass, other/Rekordbox layout                            | `stems <track> [--stem <stem>]`                    |
 | Link     | Rekordbox database → RemoteDB/NFS source visible to CDJs; optional cue                             | `link [track]`                                     |

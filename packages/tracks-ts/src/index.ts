@@ -143,6 +143,20 @@ export {
   type MediaMetadata,
 } from "./integrations/ytdlp.js";
 export {
+  DEEZLOAD_ARL_ENV,
+  DEEZLOAD_PATH_ENV,
+  DEEZLOAD_PYTHON_ENV,
+  DEEZLOAD_QUALITIES,
+  DeezloadAcquirer,
+  deezerTrackId,
+  locateExecutable,
+  type DeezloadAcquirerDependencies,
+  type DeezloadAcquirerOptions,
+  type DeezloadCandidateMetadata,
+  type DeezloadQuality,
+  type DeezloadSearchCandidate,
+} from "./integrations/deezload-library.js";
+export {
   SoulseekLibraryAcquirer,
   scoreSoulseekFile,
   type SoulseekCandidateMetadata,
@@ -175,6 +189,7 @@ export {
   MANIFEST_SCHEMA_VERSION,
   parseManifest,
   trackSearchQuery,
+  ACQUISITION_BACKENDS,
   type AcquisitionBackend,
   type AcquisitionCandidate,
   type AcquisitionDownload,

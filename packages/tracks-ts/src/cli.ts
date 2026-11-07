@@ -40,6 +40,7 @@ import {
 import { prepareHostedImportSource, type ImportSourceKind } from "./import-source.js";
 import { CachedSpotifyClient } from "./integrations/spotify-cache.js";
 import { RekordboxPipelineStore } from "./pipeline-state.js";
+import { DEEZLOAD_QUALITIES, DeezloadAcquirer } from "./integrations/deezload-library.js";
 import { SoulseekLibraryAcquirer } from "./integrations/slsk-library.js";
 import { getYtdlpTsCommand, inspectMediaMetadata } from "./integrations/ytdlp.js";
 import {
@@ -48,7 +49,7 @@ import {
   type YtdlpReferenceClient,
 } from "./integrations/ytdlp-library.js";
 import { defaultTrackLibraryRoot } from "./library-paths.js";
-import { createManifest, type SetManifest } from "./manifest.js";
+import { ACQUISITION_BACKENDS, createManifest, type SetManifest } from "./manifest.js";
 import { enrichRekordboxMetadata, type MetadataFieldSource } from "./metadata-enrichment.js";
 import { runProcess } from "./process.js";
 import {
@@ -117,6 +118,15 @@ const providerEnv = z.object({
 });
 
 const importEnv = providerEnv.extend({
+  DEEZLOAD_ARL: z.string().optional().describe("Deezer ARL cookie for deezload acquisition"),
+  DEEZLOAD_PATH: z
+    .string()
+    .optional()
+    .describe("deezload executable or deezload.py path; defaults to `deezload` on PATH"),
+  DEEZLOAD_PYTHON: z
+    .string()
+    .optional()
+    .describe("Python interpreter for a deezload.py DEEZLOAD_PATH; defaults to python3"),
   SLSK_USERNAME: z.string().optional().describe("Soulseek username"),
   SLSK_PASSWORD: z.string().optional().describe("Soulseek password"),
   DJBOOTH_LIBRARY_ROOT: z
@@ -134,6 +144,7 @@ const cacheModeOption = z
   .describe("Use, refresh, or bypass the persistent provider metadata cache");
 
 export type ImportSetAcquirerFactories = {
+  deezload(): TrackAcquirer;
   soulseek(): TrackAcquirer;
   nativeYtdlp(): TrackAcquirer;
   referenceYtdlp(): TrackAcquirer;
@@ -143,7 +154,7 @@ export function orderedImportSetAcquirers(
   referenceYtdlp: boolean,
   factories: ImportSetAcquirerFactories,
 ): TrackAcquirer[] {
-  const acquirers = [factories.soulseek(), factories.nativeYtdlp()];
+  const acquirers = [factories.deezload(), factories.soulseek(), factories.nativeYtdlp()];
   if (referenceYtdlp) acquirers.push(factories.referenceYtdlp());
   return acquirers;
 }
@@ -315,7 +326,7 @@ const spotifyOutput = z.union([
 ]);
 
 const acquisitionCandidateOutput = z.object({
-  backend: z.enum(["slsk", "ytdlp"]),
+  backend: z.enum(ACQUISITION_BACKENDS),
   id: z.string(),
   source: z.string(),
   title: z.string(),
@@ -325,7 +336,7 @@ const acquisitionCandidateOutput = z.object({
 });
 
 const acquisitionDownloadOutput = z.object({
-  backend: z.enum(["local", "slsk", "ytdlp"]),
+  backend: z.enum(["local", ...ACQUISITION_BACKENDS]),
   kind: z.enum(["individual", "source-set-clip"]).optional(),
   mediaPath: z.string(),
   files: z.array(z.string()),
@@ -825,7 +836,9 @@ const setWorkflowOptions = z.object({
   referenceYtdlp: z
     .boolean()
     .default(false)
-    .describe("Explicitly add external yt-dlp after Soulseek and the typed native downloader"),
+    .describe(
+      "Explicitly add external yt-dlp after Deezer, Soulseek, and the typed native downloader",
+    ),
   cookiesFromBrowser: z
     .string()
     .optional()
@@ -853,6 +866,14 @@ const setWorkflowOptions = z.object({
     .max(MAX_ACQUISITION_CONCURRENCY)
     .default(DEFAULT_ACQUISITION_CONCURRENCY)
     .describe("Parallel independent recording variants; defaults to 3"),
+  deezloadQuality: z
+    .enum(DEEZLOAD_QUALITIES)
+    .default("FLAC")
+    .describe("Requested Deezer tier for deezload; lower tiers are used when a track lacks it"),
+  deezloadMinQuality: z
+    .enum(DEEZLOAD_QUALITIES)
+    .optional()
+    .describe("Lowest Deezer tier deezload may fall back to; defaults to no floor"),
   slskQueueTimeoutMs: z
     .number()
     .int()
@@ -1162,6 +1183,21 @@ async function runSetWorkflowCommand(
       : await workflowSpotifyClient(context.options.cacheMode);
     soulseek = new SoulseekClient({ transferTimeout: context.options.slskQueueTimeoutMs });
     const acquirers = orderedImportSetAcquirers(context.options.referenceYtdlp, {
+      deezload: () =>
+        new DeezloadAcquirer({
+          signal: controller.signal,
+          environment: {
+            DEEZLOAD_ARL: context.env.DEEZLOAD_ARL,
+            DEEZLOAD_PATH: context.env.DEEZLOAD_PATH,
+            DEEZLOAD_PYTHON: context.env.DEEZLOAD_PYTHON,
+            PATH: process.env.PATH,
+          },
+          quality: context.options.deezloadQuality,
+          ...(context.options.deezloadMinQuality
+            ? { minQuality: context.options.deezloadMinQuality }
+            : {}),
+          cacheMode: context.options.cacheMode,
+        }),
       soulseek: () =>
         new SoulseekLibraryAcquirer(soulseek!, {
           signal: controller.signal,
